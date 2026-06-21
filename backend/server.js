@@ -113,6 +113,58 @@ app.delete('/api/suppliers/:id', async (req, res) => {
   res.json({ message: 'Supplier deleted' });
 });
 
+// GET all stock items
+app.get('/api/stock-items', async (req, res) => {
+  const { data, error } = await supabase.from('stock_items').select('*').order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// CREATE stock item
+app.post('/api/stock-items', async (req, res) => {
+  const { item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage } = req.body;
+  if (!item_name) return res.status(400).json({ error: 'Item name is required' });
+
+  const { data, error } = await supabase
+    .from('stock_items')
+    .insert([{
+      item_name,
+      sku,
+      unit,
+      purchase_price: purchase_price || 0,
+      selling_price: selling_price || 0,
+      quantity: quantity || 0,
+      gst_percentage: gst_percentage || 0,
+    }])
+    .select();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data[0]);
+});
+
+// UPDATE stock item
+app.put('/api/stock-items/:id', async (req, res) => {
+  const { id } = req.params;
+  const { item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage } = req.body;
+
+  const { data, error } = await supabase
+    .from('stock_items')
+    .update({ item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage })
+    .eq('id', id)
+    .select();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data[0]);
+});
+
+// DELETE stock item
+app.delete('/api/stock-items/:id', async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from('stock_items').delete().eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Stock item deleted' });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
