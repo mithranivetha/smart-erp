@@ -68,6 +68,51 @@ app.delete('/api/customers/:id', async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   res.json({ message: 'Customer deleted' });
 });
+
+// GET all suppliers
+app.get('/api/suppliers', async (req, res) => {
+  const { data, error } = await supabase.from('suppliers').select('*').order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// CREATE supplier
+app.post('/api/suppliers', async (req, res) => {
+  const { name, mobile, address, outstanding_dues } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+
+  const { data, error } = await supabase
+    .from('suppliers')
+    .insert([{ name, mobile, address, outstanding_dues: outstanding_dues || 0 }])
+    .select();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data[0]);
+});
+
+// UPDATE supplier
+app.put('/api/suppliers/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, mobile, address, outstanding_dues } = req.body;
+
+  const { data, error } = await supabase
+    .from('suppliers')
+    .update({ name, mobile, address, outstanding_dues })
+    .eq('id', id)
+    .select();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data[0]);
+});
+
+// DELETE supplier
+app.delete('/api/suppliers/:id', async (req, res) => {
+  const { id } = req.params;
+  const { error } = await supabase.from('suppliers').delete().eq('id', id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Supplier deleted' });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
