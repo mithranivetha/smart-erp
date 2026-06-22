@@ -165,6 +165,94 @@ app.delete('/api/stock-items/:id', async (req, res) => {
   res.json({ message: 'Stock item deleted' });
 });
 
+// CREATE a sales voucher
+app.post('/api/sales-vouchers', async (req, res) => {
+  const { customer_id, customer_name, items } = req.body;
+  // items = [{ item_id, item_name, quantity, price }, ...]
+
+  if (!customer_id || !items || items.length === 0) {
+    return res.status(400).json({ error: 'Customer and at least one item are required' });
+  }
+
+  // 1. Calculate total and generate invoice number
+  const total_amount = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+  const invoice_number = `INV-${Date.now()}`;
+
+  // 2. Create the voucher header
+  const { data: voucher, error: voucherError } = await supabase
+    .from('sales_vouchers')
+    .insert([{ invoice_number, customer_id, customer_name, total_amount }])
+    .select()
+    .single();
+
+  if (voucherError) return res.status(500).json({ error: voucherError.message });
+
+  // 3. Insert each line item AND reduce stock quantity
+  for (const item of items) {
+    const subtotal = item.quantity * item.price;
+
+    const { error: lineError } = await supabase
+      .from('sales_voucher_items')
+      .insert([{
+        voucher_id: voucher.id,
+        item_id: item.item_id,
+        item_name: item.item_name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal,
+      }]);
+
+    if (lineError) return res.status(500).json({ error: lineError.message });
+
+    // Fetch current stock quantity, then reduce it
+    const { data: stockItem, error: fetchError } = await supabase
+      .from('stock_items')
+      .select('quantity')
+      .eq('id', item.item_id)
+      .single();
+
+    if (fetchError) return res.status(500).json({ error: fetchError.message });
+
+    if (stockItem.quantity < item.quantity) {
+      return res.status(400).json({
+        error: `Insufficient stock for "${item.item_name}". Available: ${stockItem.quantity}, Requested: ${item.quantity}`
+      });
+    }
+
+    const newQuantity = stockItem.quantity - item.quantity;
+
+    const { error: stockError } = await supabase
+      .from('stock_items')
+      .update({ quantity: newQuantity })
+      .eq('id', item.item_id);
+
+    if (stockError) return res.status(500).json({ error: stockError.message });
+  }
+
+  res.status(201).json(voucher);
+});
+
+// GET all sales vouchers (with their line items)
+app.get('/api/sales-vouchers', async (req, res) => {
+  const { data: vouchers, error } = await supabase
+    .from('sales_vouchers')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  // attach line items to each voucher
+  for (const v of vouchers) {
+    const { data: lineItems } = await supabase
+      .from('sales_voucher_items')
+      .select('*')
+      .eq('voucher_id', v.id);
+    v.items = lineItems;
+  }
+
+  res.json(vouchers);
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
