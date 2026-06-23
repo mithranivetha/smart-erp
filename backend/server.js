@@ -253,6 +253,86 @@ app.get('/api/sales-vouchers', async (req, res) => {
   res.json(vouchers);
 });
 
+// CREATE a purchase voucher
+app.post('/api/purchase-vouchers', async (req, res) => {
+  const { supplier_id, supplier_name, items } = req.body;
+
+  if (!supplier_id || !items || items.length === 0) {
+    return res.status(400).json({ error: 'Supplier and at least one item are required' });
+  }
+
+  // 1. Calculate total and generate voucher number
+  const total_amount = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+  const voucher_number = `PUR-${Date.now()}`;
+
+  // 2. Create the purchase voucher header
+  const { data: voucher, error: voucherError } = await supabase
+    .from('purchase_vouchers')
+    .insert([{ voucher_number, supplier_id, supplier_name, total_amount }])
+    .select()
+    .single();
+
+  if (voucherError) return res.status(500).json({ error: voucherError.message });
+
+  // 3. Insert each line item AND increase stock quantity
+  for (const item of items) {
+    const subtotal = item.quantity * item.price;
+
+    const { error: lineError } = await supabase
+      .from('purchase_voucher_items')
+      .insert([{
+        voucher_id: voucher.id,
+        item_id: item.item_id,
+        item_name: item.item_name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal,
+      }]);
+
+    if (lineError) return res.status(500).json({ error: lineError.message });
+
+    // Fetch current stock quantity then increase it
+    const { data: stockItem, error: fetchError } = await supabase
+      .from('stock_items')
+      .select('quantity')
+      .eq('id', item.item_id)
+      .single();
+
+    if (fetchError) return res.status(500).json({ error: fetchError.message });
+
+    const newQuantity = stockItem.quantity + item.quantity;
+
+    const { error: stockError } = await supabase
+      .from('stock_items')
+      .update({ quantity: newQuantity })
+      .eq('id', item.item_id);
+
+    if (stockError) return res.status(500).json({ error: stockError.message });
+  }
+
+  res.status(201).json(voucher);
+});
+
+// GET all purchase vouchers with line items
+app.get('/api/purchase-vouchers', async (req, res) => {
+  const { data: vouchers, error } = await supabase
+    .from('purchase_vouchers')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  for (const v of vouchers) {
+    const { data: lineItems } = await supabase
+      .from('purchase_voucher_items')
+      .select('*')
+      .eq('voucher_id', v.id);
+    v.items = lineItems;
+  }
+
+  res.json(vouchers);
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
