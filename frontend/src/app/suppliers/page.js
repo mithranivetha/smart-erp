@@ -39,55 +39,90 @@ export default function SuppliersPage() {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Supplier Ledger</h1>
+    <div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-forest">Supplier Ledger</h1>
+        <p className="text-sage mt-1">Manage your suppliers and outstanding dues</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mb-8 space-y-3 border p-4 rounded">
-        <input
-          type="text"
-          placeholder="Supplier Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className="border p-2 w-full rounded"
-        />
-        <input
-          type="text"
-          placeholder="Mobile Number"
-          value={mobile}
-          onChange={(e) => setMobile(e.target.value)}
-          className="border p-2 w-full rounded"
-        />
-        <input
-          type="text"
-          placeholder="Address"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          className="border p-2 w-full rounded"
-        />
-        <button type="submit" className="bg-burgundy text-offwhite px-4 py-2 rounded hover:bg-forest transition-colors">
-          Add Supplier
-        </button>
-      </form>
+      <div className="bg-offwhite border border-forest rounded-lg p-6 mb-8">
+        <h2 className="text-lg font-semibold text-forest mb-4">Add New Supplier</h2>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="text"
+            placeholder="Supplier Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="border border-sage bg-parchment text-forest placeholder-sage p-2 w-full rounded focus:outline-none focus:border-forest"
+          />
+          <input
+            type="text"
+            placeholder="Mobile Number"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            className="border border-sage bg-parchment text-forest placeholder-sage p-2 w-full rounded focus:outline-none focus:border-forest"
+          />
+          <input
+            type="text"
+            placeholder="Address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="border border-sage bg-parchment text-forest placeholder-sage p-2 w-full rounded focus:outline-none focus:border-forest"
+          />
+          <button
+            type="submit"
+            className="bg-burgundy text-offwhite px-6 py-2 rounded hover:bg-sage transition-colors"
+          >
+            Add Supplier
+          </button>
+        </form>
+      </div>
 
-      <h2 className="text-xl font-semibold mb-3">All Suppliers</h2>
-      <ul className="space-y-2">
-        {suppliers.map((s) => (
-          <li key={s.id} className="border p-3 rounded flex justify-between items-center">
-            <div>
-              <p className="font-medium">{s.name}</p>
-              <p className="text-sm text-gray-500">{s.mobile} — {s.address}</p>
-              <p className="text-sm">Dues: ₹{s.outstanding_dues}</p>
-            </div>
-            <button
-              onClick={() => handleDelete(s.id)}
-              className="text-sm border border-burgundy text-burgundy px-2 py-1 rounded hover:bg-burgundy hover:text-offwhite transition-colors"
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="bg-offwhite border border-forest rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-parchment">
+          <h2 className="text-lg font-semibold text-forest">All Suppliers</h2>
+        </div>
+        <table className="w-full">
+          <thead className="bg-forest text-offwhite">
+            <tr>
+              <th className="text-left px-6 py-3 text-sm">Name</th>
+              <th className="text-left px-6 py-3 text-sm">Mobile</th>
+              <th className="text-left px-6 py-3 text-sm">Address</th>
+              <th className="text-left px-6 py-3 text-sm">Dues</th>
+              <th className="px-6 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {suppliers.map((s, idx) => (
+              <tr
+                key={s.id}
+                className={`border-b border-parchment ${idx % 2 === 0 ? 'bg-offwhite' : 'bg-parchment'}`}
+              >
+                <td className="px-6 py-3 text-forest font-medium">{s.name}</td>
+                <td className="px-6 py-3 text-sage">{s.mobile}</td>
+                <td className="px-6 py-3 text-sage">{s.address}</td>
+                <td className="px-6 py-3 text-forest">₹{s.outstanding_dues}</td>
+                <td className="px-6 py-3 text-right">
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    className="text-sm border border-burgundy text-burgundy px-3 py-1 rounded hover:bg-burgundy hover:text-offwhite transition-colors"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {suppliers.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-sage">
+                  No suppliers yet. Add one above.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
