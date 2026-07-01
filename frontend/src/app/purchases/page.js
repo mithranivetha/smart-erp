@@ -77,7 +77,7 @@ export default function PurchasesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-forest">Purchase Voucher</h1>
+        <h1 className="text-3xl font-bold text-forest font-playfair">Purchase Voucher</h1>
         <p className="text-sage mt-1">Record purchases from suppliers and update inventory</p>
       </div>
 
@@ -121,7 +121,7 @@ export default function PurchasesPage() {
             </thead>
             <tbody>
               {cartItems.map((c, idx) => (
-                <tr key={idx} className={`border-t border-parchment ${idx % 2 === 0 ? 'bg-offwhite' : 'bg-parchment'}`}>
+                <tr key={idx} className={`border-t border-burgundy ${idx % 2 === 0 ? 'bg-offwhite' : 'bg-parchment'}`}>
                   <td className="px-4 py-2 text-forest">{c.item_name}</td>
                   <td className="px-4 py-2 text-forest">{c.quantity}</td>
                   <td className="px-4 py-2 text-forest">₹{c.price}</td>

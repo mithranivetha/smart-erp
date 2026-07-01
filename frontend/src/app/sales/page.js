@@ -10,6 +10,7 @@ export default function SalesPage() {
   const [selectedItemId, setSelectedItemId] = useState('');
   const [quantity, setQuantity] = useState('');
   const [cartItems, setCartItems] = useState([]);
+  const [gstType, setGstType] = useState('CGST_SGST');
 
   useEffect(() => {
     fetchCustomers();
@@ -40,6 +41,7 @@ export default function SalesPage() {
       item_name: item.item_name,
       quantity: Number(quantity),
       price: item.selling_price,
+      gst_percentage: item.gst_percentage,
     }]);
     setSelectedItemId('');
     setQuantity('');
@@ -49,7 +51,13 @@ export default function SalesPage() {
     setCartItems(cartItems.filter((_, i) => i !== index));
   };
 
-  const cartTotal = cartItems.reduce((sum, i) => sum + i.quantity * i.price, 0);
+  // GST calculations
+  const taxableAmount = cartItems.reduce((sum, i) => sum + i.quantity * i.price, 0);
+  const totalGst = cartItems.reduce((sum, i) => sum + (i.quantity * i.price * i.gst_percentage) / 100, 0);
+  const grandTotal = taxableAmount + totalGst;
+  const cgst = gstType === 'CGST_SGST' ? totalGst / 2 : 0;
+  const sgst = gstType === 'CGST_SGST' ? totalGst / 2 : 0;
+  const igst = gstType === 'IGST' ? totalGst : 0;
 
   const submitInvoice = async () => {
     const customer = customers.find((c) => c.id === customerId);
@@ -57,15 +65,24 @@ export default function SalesPage() {
       alert('Select a customer and add at least one item');
       return;
     }
-    await fetch('http://localhost:5050/api/sales-vouchers', {
+
+    const res = await fetch('http://localhost:5050/api/sales-vouchers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         customer_id: customer.id,
         customer_name: customer.name,
+        gst_type: gstType,
         items: cartItems,
       }),
     });
+
+    const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
     setCartItems([]);
     setCustomerId('');
     fetchVouchers();
@@ -77,24 +94,41 @@ export default function SalesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-forest">Sales Voucher</h1>
-        <p className="text-sage mt-1">Create sales invoices and track inventory</p>
+        <h1 className="text-3xl font-bold text-forest font-playfair">Sales Voucher</h1>
+        <p className="text-sage mt-1">Create sales invoices with GST</p>
       </div>
 
       <div className="bg-offwhite border border-forest rounded-lg p-6 mb-8">
         <h2 className="text-lg font-semibold text-forest mb-4">New Invoice</h2>
 
-        <label className="block text-sm font-medium text-forest mb-1">Customer</label>
-        <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className={`${selectClass} w-full mb-4`}>
-          <option value="">Select customer</option>
-          {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        {/* Customer + GST type row */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-forest mb-1">Customer</label>
+            <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className={`${selectClass} w-full`}>
+              <option value="">Select customer</option>
+              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-forest mb-1">GST Type</label>
+            <select value={gstType} onChange={(e) => setGstType(e.target.value)} className={`${selectClass} w-full`}>
+              <option value="CGST_SGST">CGST + SGST (Intra-state)</option>
+              <option value="IGST">IGST (Inter-state)</option>
+            </select>
+          </div>
+        </div>
 
+        {/* Add item row */}
         <label className="block text-sm font-medium text-forest mb-1">Add Item</label>
         <div className="flex gap-2 mb-4">
           <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)} className={`${selectClass} flex-1`}>
             <option value="">Select item</option>
-            {stockItems.map((i) => <option key={i.id} value={i.id}>{i.item_name} (Stock: {i.quantity})</option>)}
+            {stockItems.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.item_name} — ₹{i.selling_price} | GST {i.gst_percentage}% | Stock: {i.quantity}
+              </option>
+            ))}
           </select>
           <input
             type="number"
@@ -108,6 +142,7 @@ export default function SalesPage() {
           </button>
         </div>
 
+        {/* Cart table */}
         {cartItems.length > 0 && (
           <table className="w-full mb-4 border border-parchment rounded">
             <thead className="bg-forest text-offwhite">
@@ -115,34 +150,73 @@ export default function SalesPage() {
                 <th className="text-left px-4 py-2 text-sm">Item</th>
                 <th className="text-left px-4 py-2 text-sm">Qty</th>
                 <th className="text-left px-4 py-2 text-sm">Price</th>
+                <th className="text-left px-4 py-2 text-sm">GST%</th>
+                <th className="text-left px-4 py-2 text-sm">GST Amt</th>
                 <th className="text-left px-4 py-2 text-sm">Subtotal</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {cartItems.map((c, idx) => (
-                <tr key={idx} className={`border-t border-parchment ${idx % 2 === 0 ? 'bg-offwhite' : 'bg-parchment'}`}>
-                  <td className="px-4 py-2 text-forest">{c.item_name}</td>
-                  <td className="px-4 py-2 text-forest">{c.quantity}</td>
-                  <td className="px-4 py-2 text-forest">₹{c.price}</td>
-                  <td className="px-4 py-2 text-forest">₹{c.quantity * c.price}</td>
-                  <td className="px-4 py-2 text-right">
-                    <button onClick={() => removeFromCart(idx)} className="text-burgundy hover:text-forest transition-colors">✕</button>
-                  </td>
-                </tr>
-              ))}
+              {cartItems.map((c, idx) => {
+                const subtotal = c.quantity * c.price;
+                const gstAmt = (subtotal * c.gst_percentage) / 100;
+                return (
+                  <tr key={idx} className={`border-t border-parchment ${idx % 2 === 0 ? 'bg-offwhite' : 'bg-parchment'}`}>
+                    <td className="px-4 py-2 text-forest">{c.item_name}</td>
+                    <td className="px-4 py-2 text-forest">{c.quantity}</td>
+                    <td className="px-4 py-2 text-forest">₹{c.price}</td>
+                    <td className="px-4 py-2 text-sage">{c.gst_percentage}%</td>
+                    <td className="px-4 py-2 text-sage">₹{gstAmt.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-forest font-medium">₹{(subtotal + gstAmt).toFixed(2)}</td>
+                    <td className="px-4 py-2 text-right">
+                      <button onClick={() => removeFromCart(idx)} className="text-burgundy hover:text-forest transition-colors">✕</button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
 
-        <div className="flex justify-between items-center">
-          <p className="font-semibold text-forest text-lg">Total: ₹{cartTotal}</p>
+        {/* GST Summary box */}
+        {cartItems.length > 0 && (
+          <div className="bg-parchment border border-sage rounded p-4 mb-4 max-w-xs ml-auto">
+            <div className="flex justify-between text-sm text-forest mb-1">
+              <span>Taxable Amount</span>
+              <span>₹{taxableAmount.toFixed(2)}</span>
+            </div>
+            {gstType === 'CGST_SGST' ? (
+              <>
+                <div className="flex justify-between text-sm text-sage mb-1">
+                  <span>CGST</span>
+                  <span>₹{cgst.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-sage mb-1">
+                  <span>SGST</span>
+                  <span>₹{sgst.toFixed(2)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between text-sm text-sage mb-1">
+                <span>IGST</span>
+                <span>₹{igst.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="border-t border-sage mt-2 pt-2 flex justify-between font-bold text-forest">
+              <span>Grand Total</span>
+              <span>₹{grandTotal.toFixed(2)}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end">
           <button onClick={submitInvoice} className="bg-burgundy text-offwhite px-6 py-2 rounded hover:bg-sage transition-colors">
             Save Invoice
           </button>
         </div>
       </div>
 
+      {/* Past invoices */}
       <div className="bg-offwhite border border-forest rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-parchment">
           <h2 className="text-lg font-semibold text-forest">Past Invoices</h2>
@@ -153,14 +227,18 @@ export default function SalesPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-semibold text-forest">{v.invoice_number}</p>
-                  <p className="text-sage text-sm">{v.customer_name}</p>
+                  <p className="text-sage text-sm">{v.customer_name} · {v.gst_type === 'CGST_SGST' ? 'CGST + SGST' : 'IGST'}</p>
                 </div>
-                <p className="font-bold text-forest">₹{v.total_amount}</p>
+                <div className="text-right">
+                  <p className="text-xs text-sage">Taxable: ₹{v.taxable_amount}</p>
+                  <p className="text-xs text-sage">GST: ₹{v.gst_amount}</p>
+                  <p className="font-bold text-forest">Total: ₹{v.grand_total}</p>
+                </div>
               </div>
               <ul className="mt-2 pl-4 space-y-1">
                 {v.items?.map((it) => (
                   <li key={it.id} className="text-sm text-sage">
-                    {it.item_name} × {it.quantity} @ ₹{it.price} = ₹{it.subtotal}
+                    {it.item_name} × {it.quantity} @ ₹{it.price} + GST ₹{it.gst_amount} = ₹{(it.subtotal + it.gst_amount).toFixed(2)}
                   </li>
                 ))}
               </ul>

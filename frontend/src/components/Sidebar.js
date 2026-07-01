@@ -17,12 +17,19 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 min-h-screen bg-forest text-offwhite flex flex-col">
-      <div className="px-6 py-5 border-b border-sage">
-        <h1 className="text-xl font-bold text-parchment tracking-wide">SmartERP</h1>
-        <p className="text-xs text-sage mt-1">Business Management</p>
+      {/* Branding */}
+      <div className="px-6 py-6 border-b border-sage">
+        <h1 className="text-2xl font-bold text-parchment tracking-wide font-playfair">SmartERP</h1>
+        <p className="text-xs text-sage mt-1 uppercase tracking-widest">Business Management</p>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      {/* Nav label */}
+      <div className="px-6 pt-5 pb-2">
+        <p className="text-xs text-sage uppercase tracking-widest">Modules</p>
+      </div>
+
+      {/* Nav links */}
+      <nav className="flex-1 px-3 pb-4 space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -41,8 +48,9 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* Footer */}
       <div className="px-6 py-4 border-t border-sage">
-        <p className="text-xs text-sage">SmartERP v1.0</p>
+        <p className="text-xs text-sage uppercase tracking-widest">v1.0 · MVP</p>
       </div>
     </aside>
   );

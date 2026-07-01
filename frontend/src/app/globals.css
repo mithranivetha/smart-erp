@@ -7,3 +7,7 @@
   --color-sage: #42766E;
   --color-offwhite: #FDF6EC;
 }
+
+.font-playfair {
+  font-family: var(--font-playfair);
+}

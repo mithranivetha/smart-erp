@@ -167,30 +167,64 @@ app.delete('/api/stock-items/:id', async (req, res) => {
 
 // CREATE a sales voucher
 app.post('/api/sales-vouchers', async (req, res) => {
-  const { customer_id, customer_name, items } = req.body;
-  // items = [{ item_id, item_name, quantity, price }, ...]
+  const { customer_id, customer_name, items, gst_type } = req.body;
 
   if (!customer_id || !items || items.length === 0) {
     return res.status(400).json({ error: 'Customer and at least one item are required' });
   }
 
-  // 1. Calculate total and generate invoice number
-  const total_amount = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+  // 1. Calculate totals with GST
+  let taxable_amount = 0;
+  let total_gst = 0;
+
+  const itemsWithGst = items.map((item) => {
+    const subtotal = item.quantity * item.price;
+    const gst_amount = parseFloat(((subtotal * item.gst_percentage) / 100).toFixed(2));
+    taxable_amount += subtotal;
+    total_gst += gst_amount;
+    return { ...item, subtotal, gst_amount };
+  });
+
+  taxable_amount = parseFloat(taxable_amount.toFixed(2));
+  total_gst = parseFloat(total_gst.toFixed(2));
+  const grand_total = parseFloat((taxable_amount + total_gst).toFixed(2));
+
+  let cgst_amount = 0;
+  let sgst_amount = 0;
+  let igst_amount = 0;
+
+  if (gst_type === 'CGST_SGST') {
+    cgst_amount = parseFloat((total_gst / 2).toFixed(2));
+    sgst_amount = parseFloat((total_gst / 2).toFixed(2));
+  } else {
+    igst_amount = total_gst;
+  }
+
   const invoice_number = `INV-${Date.now()}`;
 
-  // 2. Create the voucher header
+  // 2. Create voucher header
   const { data: voucher, error: voucherError } = await supabase
     .from('sales_vouchers')
-    .insert([{ invoice_number, customer_id, customer_name, total_amount }])
+    .insert([{
+      invoice_number,
+      customer_id,
+      customer_name,
+      total_amount: taxable_amount,
+      gst_type,
+      taxable_amount,
+      gst_amount: total_gst,
+      cgst_amount,
+      sgst_amount,
+      igst_amount,
+      grand_total,
+    }])
     .select()
     .single();
 
   if (voucherError) return res.status(500).json({ error: voucherError.message });
 
-  // 3. Insert each line item AND reduce stock quantity
-  for (const item of items) {
-    const subtotal = item.quantity * item.price;
-
+  // 3. Insert line items and reduce stock
+  for (const item of itemsWithGst) {
     const { error: lineError } = await supabase
       .from('sales_voucher_items')
       .insert([{
@@ -199,12 +233,12 @@ app.post('/api/sales-vouchers', async (req, res) => {
         item_name: item.item_name,
         quantity: item.quantity,
         price: item.price,
-        subtotal,
+        subtotal: item.subtotal,
+        gst_amount: item.gst_amount,
       }]);
 
     if (lineError) return res.status(500).json({ error: lineError.message });
 
-    // Fetch current stock quantity, then reduce it
     const { data: stockItem, error: fetchError } = await supabase
       .from('stock_items')
       .select('quantity')
@@ -219,11 +253,9 @@ app.post('/api/sales-vouchers', async (req, res) => {
       });
     }
 
-    const newQuantity = stockItem.quantity - item.quantity;
-
     const { error: stockError } = await supabase
       .from('stock_items')
-      .update({ quantity: newQuantity })
+      .update({ quantity: stockItem.quantity - item.quantity })
       .eq('id', item.item_id);
 
     if (stockError) return res.status(500).json({ error: stockError.message });

@@ -86,7 +86,7 @@ export default function StockItemsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-forest">Stock Items</h1>
+        <h1 className="text-3xl font-bold text-forest font-playfair">Stock Items</h1>
         <p className="text-sage mt-1">Manage your inventory and pricing</p>
       </div>
 

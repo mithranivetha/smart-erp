@@ -64,7 +64,7 @@ export default function CustomersPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-forest">Customer Ledger</h1>
+        <h1 className="text-3xl font-bold text-forest font-playfair">Customer Ledger</h1>
         <p className="text-sage mt-1">Manage your customers and outstanding balances</p>
       </div>
 
@@ -81,7 +81,7 @@ export default function CustomersPage() {
       </div>
 
       <div className="bg-offwhite border border-forest rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-parchment">
+        <div className="px-6 py-4 border-b border-burgundy">
           <h2 className="text-lg font-semibold text-forest">All Customers</h2>
         </div>
         <table className="w-full">

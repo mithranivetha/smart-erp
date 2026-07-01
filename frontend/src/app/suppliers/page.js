@@ -64,7 +64,7 @@ export default function SuppliersPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-forest">Supplier Ledger</h1>
+        <h1 className="text-3xl font-bold text-forest font-playfair">Supplier Ledger</h1>
         <p className="text-sage mt-1">Manage your suppliers and outstanding dues</p>
       </div>
 
@@ -81,7 +81,7 @@ export default function SuppliersPage() {
       </div>
 
       <div className="bg-offwhite border border-forest rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-parchment">
+        <div className="px-6 py-4 border-b border-burgundyu">
           <h2 className="text-lg font-semibold text-forest">All Suppliers</h2>
         </div>
         <table className="w-full">
