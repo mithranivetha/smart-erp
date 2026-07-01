@@ -4,7 +4,12 @@ const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://smart-erp-eight.vercel.app'
+  ]
+}));
 app.use(express.json());
 
 const supabase = createClient(
