@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import API_BASE from '@/lib/api';
 
 export default function StockItemsPage() {
   const [items, setItems] = useState([]);
@@ -15,7 +16,7 @@ export default function StockItemsPage() {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
 
-  const API_URL = 'http://localhost:5050/api/stock-items';
+  const API_URL = `${API_BASE}/api/stock-items`;
 
   useEffect(() => { fetchItems(); }, []);
 

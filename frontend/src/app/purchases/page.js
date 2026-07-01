@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import API_BASE from '@/lib/api';
 
 export default function PurchasesPage() {
   const [suppliers, setSuppliers] = useState([]);
@@ -18,17 +19,17 @@ export default function PurchasesPage() {
   }, []);
 
   const fetchSuppliers = async () => {
-    const res = await fetch('http://localhost:5050/api/suppliers');
+    const res = await fetch(`${API_BASE}/api/suppliers`);
     setSuppliers(await res.json());
   };
 
   const fetchStockItems = async () => {
-    const res = await fetch('http://localhost:5050/api/stock-items');
+    const res = await fetch(`${API_BASE}/api/stock-items`);
     setStockItems(await res.json());
   };
 
   const fetchVouchers = async () => {
-    const res = await fetch('http://localhost:5050/api/purchase-vouchers');
+    const res = await fetch(`${API_BASE}/api/purchase-vouchers`);
     setVouchers(await res.json());
   };
 
@@ -57,7 +58,7 @@ export default function PurchasesPage() {
       alert('Select a supplier and add at least one item');
       return;
     }
-    await fetch('http://localhost:5050/api/purchase-vouchers', {
+    await fetch(`${API_BASE}/api/purchase-vouchers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

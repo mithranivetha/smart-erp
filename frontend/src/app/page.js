@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import API_BASE from '@/lib/api';
 
 const modules = [
   { label: 'Customers', href: '/customers', desc: 'Manage customer ledger and balances' },
@@ -29,12 +30,12 @@ export default function Dashboard() {
 
     const fetchAll = async () => {
       const [customers, suppliers, stockItems, sales, purchases, lowStock] = await Promise.all([
-        fetch('http://localhost:5050/api/customers').then(r => r.json()),
-        fetch('http://localhost:5050/api/suppliers').then(r => r.json()),
-        fetch('http://localhost:5050/api/stock-items').then(r => r.json()),
-        fetch('http://localhost:5050/api/sales-vouchers').then(r => r.json()),
-        fetch('http://localhost:5050/api/purchase-vouchers').then(r => r.json()),
-        fetch('http://localhost:5050/api/stock-items/low-stock').then(r => r.json()),
+      fetch(`${API_BASE}/api/customers`).then(r => r.json()),
+      fetch(`${API_BASE}/api/suppliers`).then(r => r.json()),
+      fetch(`${API_BASE}/api/stock-items`).then(r => r.json()),
+      fetch(`${API_BASE}/api/sales-vouchers`).then(r => r.json()),
+      fetch(`${API_BASE}/api/purchase-vouchers`).then(r => r.json()),
+      fetch(`${API_BASE}/api/stock-items/low-stock`).then(r => r.json()), 
       ]);
 
       setStats({

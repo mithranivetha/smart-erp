@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import API_BASE from '@/lib/api';
 
 export default function ReportsPage() {
   const [sales, setSales] = useState([]);
@@ -12,9 +13,9 @@ export default function ReportsPage() {
   useEffect(() => {
     const fetchAll = async () => {
       const [s, p, st] = await Promise.all([
-        fetch('http://localhost:5050/api/sales-vouchers').then(r => r.json()),
-        fetch('http://localhost:5050/api/purchase-vouchers').then(r => r.json()),
-        fetch('http://localhost:5050/api/stock-items').then(r => r.json()),
+        fetch(`${API_BASE}/api/sales-vouchers`).then(r => r.json()),
+        fetch(`${API_BASE}/api/purchase-vouchers`).then(r => r.json()),
+        fetch(`${API_BASE}/api/stock-items`).then(r => r.json()),
       ]);
       setSales(s);
       setPurchases(p);

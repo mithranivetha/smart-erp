@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import API_BASE from '@/lib/api';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
@@ -12,7 +13,7 @@ export default function CustomersPage() {
   const [editMobile, setEditMobile] = useState('');
   const [editAddress, setEditAddress] = useState('');
 
-  const API_URL = 'http://localhost:5050/api/customers';
+  const API_URL = `${API_BASE}/api/customers`;
 
   useEffect(() => { fetchCustomers(); }, []);
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import API_BASE from '@/lib/api';
 
 export default function SalesPage() {
   const [customers, setCustomers] = useState([]);
@@ -19,17 +20,17 @@ export default function SalesPage() {
   }, []);
 
   const fetchCustomers = async () => {
-    const res = await fetch('http://localhost:5050/api/customers');
+    const res = await fetch(`${API_BASE}/api/customers`);
     setCustomers(await res.json());
   };
 
   const fetchStockItems = async () => {
-    const res = await fetch('http://localhost:5050/api/stock-items');
+    const res = await fetch(`${API_BASE}/api/stock-items`);
     setStockItems(await res.json());
   };
 
   const fetchVouchers = async () => {
-    const res = await fetch('http://localhost:5050/api/sales-vouchers');
+    const res = await fetch(`${API_BASE}/api/sales-vouchers`);
     setVouchers(await res.json());
   };
 
@@ -66,7 +67,7 @@ export default function SalesPage() {
       return;
     }
 
-    const res = await fetch('http://localhost:5050/api/sales-vouchers', {
+    const res = await fetch(`${API_BASE}/api/sales-vouchers`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
