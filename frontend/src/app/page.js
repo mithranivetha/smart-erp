@@ -7,38 +7,36 @@ const modules = [
   { label: 'Customers', href: '/customers', desc: 'Manage customer ledger and balances' },
   { label: 'Suppliers', href: '/suppliers', desc: 'Manage supplier ledger and dues' },
   { label: 'Stock Items', href: '/stock-items', desc: 'View and manage inventory' },
-  { label: 'Sales Voucher', href: '/sales', desc: 'Create sales invoices' },
+  { label: 'Sales Voucher', href: '/sales', desc: 'Create sales invoices with GST' },
   { label: 'Purchase Voucher', href: '/purchases', desc: 'Record purchases from suppliers' },
+  { label: 'Reports', href: '/reports', desc: 'Sales, purchases and stock summary' },
 ];
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
-    customers: 0,
-    suppliers: 0,
-    stockItems: 0,
-    sales: 0,
-    purchases: 0,
+    customers: 0, suppliers: 0,
+    stockItems: 0, sales: 0, purchases: 0,
   });
-
+  const [lowStockItems, setLowStockItems] = useState([]);
   const [date, setDate] = useState('');
 
   useEffect(() => {
     const now = new Date();
     setDate(now.toLocaleDateString('en-IN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      weekday: 'long', year: 'numeric',
+      month: 'long', day: 'numeric',
     }));
 
-    const fetchStats = async () => {
-      const [customers, suppliers, stockItems, sales, purchases] = await Promise.all([
+    const fetchAll = async () => {
+      const [customers, suppliers, stockItems, sales, purchases, lowStock] = await Promise.all([
         fetch('http://localhost:5050/api/customers').then(r => r.json()),
         fetch('http://localhost:5050/api/suppliers').then(r => r.json()),
         fetch('http://localhost:5050/api/stock-items').then(r => r.json()),
         fetch('http://localhost:5050/api/sales-vouchers').then(r => r.json()),
         fetch('http://localhost:5050/api/purchase-vouchers').then(r => r.json()),
+        fetch('http://localhost:5050/api/stock-items/low-stock').then(r => r.json()),
       ]);
+
       setStats({
         customers: customers.length,
         suppliers: suppliers.length,
@@ -46,9 +44,10 @@ export default function Dashboard() {
         sales: sales.length,
         purchases: purchases.length,
       });
+      setLowStockItems(lowStock);
     };
 
-    fetchStats();
+    fetchAll();
   }, []);
 
   return (
@@ -59,6 +58,27 @@ export default function Dashboard() {
         <h1 className="text-4xl font-bold text-forest font-playfair">Gateway of SmartERP</h1>
         <p className="text-sage mt-2">Welcome back. Here's your business at a glance.</p>
       </div>
+
+      {/* Low stock warning */}
+      {lowStockItems.length > 0 && (
+        <div className="mb-8 bg-offwhite border border-burgundy rounded-lg p-4">
+          <h2 className="text-burgundy font-semibold mb-3 flex items-center gap-2">
+            <i className="fa-solid fa-triangle-exclamation"></i> Low Stock Alert ({lowStockItems.length} item{lowStockItems.length > 1 ? 's' : ''})
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {lowStockItems.map((item) => (
+              <Link
+                key={item.id}
+                href="/stock-items"
+                className="flex items-center gap-2 bg-parchment border border-burgundy rounded px-3 py-1 text-sm hover:bg-burgundy hover:text-offwhite transition-colors group"
+              >
+                <span className="text-forest group-hover:text-offwhite">{item.item_name}</span>
+                <span className="text-burgundy font-bold group-hover:text-offwhite">{item.quantity} left</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-5 gap-4 mb-12">
@@ -94,7 +114,6 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Footer line */}
       <div className="mt-16 border-t border-sage pt-4">
         <p className="text-xs text-sage text-center tracking-widest uppercase">SmartERP · Business Management System</p>
       </div>

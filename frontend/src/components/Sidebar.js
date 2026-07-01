@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Stock Items', href: '/stock-items' },
   { label: 'Sales Voucher', href: '/sales' },
   { label: 'Purchase Voucher', href: '/purchases' },
+  { label: 'Reports', href: '/reports' },
 ];
 
 export default function Sidebar() {

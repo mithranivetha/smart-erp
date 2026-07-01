@@ -113,6 +113,19 @@ app.delete('/api/suppliers/:id', async (req, res) => {
   res.json({ message: 'Supplier deleted' });
 });
 
+// GET low stock items
+app.get('/api/stock-items/low-stock', async (req, res) => {
+  const { data, error } = await supabase
+    .from('stock_items')
+    .select('*')
+    .order('quantity', { ascending: true });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const lowStock = data.filter(item => item.quantity <= item.low_stock_threshold);
+  res.json(lowStock);
+});
+
 // GET all stock items
 app.get('/api/stock-items', async (req, res) => {
   const { data, error } = await supabase.from('stock_items').select('*').order('created_at', { ascending: false });
@@ -122,19 +135,18 @@ app.get('/api/stock-items', async (req, res) => {
 
 // CREATE stock item
 app.post('/api/stock-items', async (req, res) => {
-  const { item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage } = req.body;
+  const { item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage, low_stock_threshold } = req.body;
   if (!item_name) return res.status(400).json({ error: 'Item name is required' });
 
   const { data, error } = await supabase
     .from('stock_items')
     .insert([{
-      item_name,
-      sku,
-      unit,
+      item_name, sku, unit,
       purchase_price: purchase_price || 0,
       selling_price: selling_price || 0,
       quantity: quantity || 0,
       gst_percentage: gst_percentage || 0,
+      low_stock_threshold: low_stock_threshold || 10,
     }])
     .select();
 
@@ -145,11 +157,11 @@ app.post('/api/stock-items', async (req, res) => {
 // UPDATE stock item
 app.put('/api/stock-items/:id', async (req, res) => {
   const { id } = req.params;
-  const { item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage } = req.body;
+  const { item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage, low_stock_threshold } = req.body;
 
   const { data, error } = await supabase
     .from('stock_items')
-    .update({ item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage })
+    .update({ item_name, sku, unit, purchase_price, selling_price, quantity, gst_percentage, low_stock_threshold })
     .eq('id', id)
     .select();
 
